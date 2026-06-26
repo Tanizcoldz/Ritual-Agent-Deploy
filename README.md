@@ -44,7 +44,7 @@ nvm use 22
 
 ```bash
 npm install
-npm run dev
+npm start
 ```
 
 Then open the local Vite URL:
