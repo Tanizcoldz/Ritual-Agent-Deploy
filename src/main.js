@@ -76,6 +76,7 @@ const elements = {
   saltInput: document.querySelector("#saltInput"),
   scanButton: document.querySelector("#scanButton"),
   scanSaltInput: document.querySelector("#scanSaltInput"),
+  shareButton: document.querySelector("#shareButton"),
   stopButton: document.querySelector("#stopButton"),
   targetAgentInput: document.querySelector("#targetAgentInput"),
   toolPanels: document.querySelectorAll("[data-tool-panel]"),
@@ -234,16 +235,29 @@ function saveSettings() {
 }
 
 function loadSettings() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasUrlParams = urlParams.has('prompt') || urlParams.has('model') || urlParams.has('salt');
+
   try {
     const settings = JSON.parse(localStorage.getItem("ritual-agent-builder-settings") || "{}");
-    if (settings.prompt) elements.promptInput.value = settings.prompt;
-    if (settings.model) elements.modelInput.value = settings.model;
-    if (settings.salt) elements.saltInput.value = settings.salt;
-    if (settings.scanSalt) elements.scanSaltInput.value = settings.scanSalt;
-    if (settings.agentAddress) elements.agentLookupInput.value = settings.agentAddress;
-    if (settings.deposit) elements.depositInput.value = settings.deposit;
-    if (settings.lockBlocks) elements.lockBlocksInput.value = settings.lockBlocks;
-    if (settings.topup) elements.topupInput.value = settings.topup;
+    
+    if (hasUrlParams) {
+      if (urlParams.has('prompt')) elements.promptInput.value = urlParams.get('prompt');
+      if (urlParams.has('model')) elements.modelInput.value = urlParams.get('model');
+      if (urlParams.has('salt')) elements.saltInput.value = urlParams.get('salt');
+      if (urlParams.has('deposit')) elements.depositInput.value = urlParams.get('deposit');
+      if (urlParams.has('lockBlocks')) elements.lockBlocksInput.value = urlParams.get('lockBlocks');
+      saveSettings(); // Save URL params to local storage
+    } else {
+      if (settings.prompt) elements.promptInput.value = settings.prompt;
+      if (settings.model) elements.modelInput.value = settings.model;
+      if (settings.salt) elements.saltInput.value = settings.salt;
+      if (settings.scanSalt) elements.scanSaltInput.value = settings.scanSalt;
+      if (settings.agentAddress) elements.agentLookupInput.value = settings.agentAddress;
+      if (settings.deposit) elements.depositInput.value = settings.deposit;
+      if (settings.lockBlocks) elements.lockBlocksInput.value = settings.lockBlocks;
+      if (settings.topup) elements.topupInput.value = settings.topup;
+    }
   } catch {
     localStorage.removeItem("ritual-agent-builder-settings");
   }
@@ -970,6 +984,30 @@ function bindUi() {
       showError(error);
     }
   });
+
+  if (elements.shareButton) {
+    elements.shareButton.addEventListener("click", async () => {
+      try {
+        const url = new URL(window.location.href.split('?')[0]);
+        url.searchParams.set('prompt', elements.promptInput.value);
+        url.searchParams.set('model', elements.modelInput.value);
+        url.searchParams.set('salt', elements.saltInput.value);
+        url.searchParams.set('deposit', elements.depositInput.value);
+        url.searchParams.set('lockBlocks', elements.lockBlocksInput.value);
+        
+        await navigator.clipboard.writeText(url.toString());
+        
+        const originalText = elements.shareButton.textContent;
+        elements.shareButton.textContent = "Copied!";
+        setTimeout(() => {
+          elements.shareButton.textContent = originalText;
+        }, 2000);
+        logActivity("Share Link Copied", "Agent config copied to clipboard");
+      } catch (error) {
+        showError(error);
+      }
+    });
+  }
 
   elements.refreshTargetButton.addEventListener("click", async () => {
     try {
